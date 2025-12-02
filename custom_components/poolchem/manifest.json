@@ -1,0 +1,13 @@
+{
+  "domain": "poolchem",
+  "name": "Pool Chemistry",
+  "codeowners": ["@joyfulhouse"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/joyfulhouse/ha-poolchem",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/joyfulhouse/ha-poolchem/issues",
+  "requirements": ["pypoolchem>=0.1.1"],
+  "version": "0.1.0"
+}

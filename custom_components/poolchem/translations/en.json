@@ -1,0 +1,161 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pool Configuration",
+        "description": "Configure your pool settings.",
+        "data": {
+          "pool_name": "Pool Name",
+          "volume_gallons": "Pool Volume",
+          "pool_type": "Pool Type",
+          "surface_type": "Surface Type"
+        }
+      },
+      "required_entities": {
+        "title": "Required Sensors",
+        "description": "Select the sensor entities for required water chemistry readings.",
+        "data": {
+          "temp_entity": "Temperature Sensor",
+          "ph_entity": "pH Sensor",
+          "fc_entity": "Free Chlorine Sensor",
+          "ta_entity": "Total Alkalinity Sensor",
+          "ch_entity": "Calcium Hardness Sensor"
+        }
+      },
+      "optional_entities": {
+        "title": "Optional Sensors",
+        "description": "Select optional sensor entities. Leave blank if not available.",
+        "data": {
+          "cya_entity": "Cyanuric Acid (Stabilizer) Sensor",
+          "salt_entity": "Salt Sensor",
+          "tds_entity": "Total Dissolved Solids Sensor",
+          "borates_entity": "Borates Sensor"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Pool is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Target Chemistry Values",
+        "description": "Set target values for {name}. These are used for dosing calculations.",
+        "data": {
+          "target_ph": "Target pH",
+          "target_fc": "Target Free Chlorine",
+          "target_ta": "Target Total Alkalinity",
+          "target_ch": "Target Calcium Hardness",
+          "target_cya": "Target Cyanuric Acid",
+          "target_salt": "Target Salt Level"
+        }
+      },
+      "chemicals": {
+        "title": "Chemical Types",
+        "description": "Select the chemicals you use for pool maintenance.",
+        "data": {
+          "acid_type": "Acid Type (for lowering pH)",
+          "chlorine_type": "Chlorine Type"
+        }
+      },
+      "dosing_sensors": {
+        "title": "Dosing Sensors",
+        "description": "Enable or disable dosing recommendation sensors.",
+        "data": {
+          "enable_dose_acid": "Enable Acid Dose Sensor",
+          "enable_dose_chlorine": "Enable Chlorine Dose Sensor",
+          "enable_dose_alkalinity": "Enable Alkalinity Dose Sensor",
+          "enable_dose_calcium": "Enable Calcium Dose Sensor",
+          "enable_dose_cya": "Enable Stabilizer Dose Sensor",
+          "enable_dose_salt": "Enable Salt Dose Sensor"
+        }
+      }
+    }
+  },
+  "selector": {
+    "pool_type": {
+      "options": {
+        "chlorine": "Traditional Chlorine",
+        "saltwater": "Saltwater (SWG)",
+        "mineral": "Mineral System"
+      }
+    },
+    "surface_type": {
+      "options": {
+        "plaster": "Plaster",
+        "pebble": "Pebble/Aggregate",
+        "vinyl": "Vinyl Liner",
+        "fiberglass": "Fiberglass",
+        "painted": "Painted"
+      }
+    },
+    "acid_type": {
+      "options": {
+        "muriatic_14_5": "Muriatic Acid 14.5%",
+        "muriatic_28_3": "Muriatic Acid 28.3%",
+        "muriatic_31_45": "Muriatic Acid 31.45%",
+        "muriatic_34_6": "Muriatic Acid 34.6%",
+        "dry_acid": "Dry Acid (Sodium Bisulfate)"
+      }
+    },
+    "chlorine_type": {
+      "options": {
+        "bleach_6": "Bleach 6%",
+        "bleach_8_25": "Bleach 8.25%",
+        "bleach_10": "Bleach 10%",
+        "bleach_12_5": "Bleach 12.5% (Pool Chlorine)",
+        "cal_hypo_65": "Cal-Hypo 65%",
+        "cal_hypo_73": "Cal-Hypo 73%",
+        "dichlor": "Dichlor",
+        "trichlor": "Trichlor"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "csi": {
+        "name": "CSI"
+      },
+      "lsi": {
+        "name": "LSI"
+      },
+      "water_balance": {
+        "name": "Water Balance",
+        "state": {
+          "severely_corrosive": "Severely Corrosive",
+          "slightly_corrosive": "Slightly Corrosive",
+          "balanced": "Balanced",
+          "slightly_scaling": "Slightly Scaling",
+          "severely_scaling": "Severely Scaling",
+          "unknown": "Unknown"
+        }
+      },
+      "fc_cya_ratio": {
+        "name": "FC/CYA Ratio"
+      },
+      "dose_acid": {
+        "name": "Acid Dose"
+      },
+      "dose_chlorine": {
+        "name": "Chlorine Dose"
+      },
+      "dose_alkalinity": {
+        "name": "Baking Soda Dose"
+      },
+      "dose_calcium": {
+        "name": "Calcium Dose"
+      },
+      "dose_cya": {
+        "name": "Stabilizer Dose"
+      },
+      "dose_salt": {
+        "name": "Salt Dose"
+      }
+    }
+  }
+}
