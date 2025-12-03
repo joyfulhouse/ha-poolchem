@@ -21,6 +21,7 @@ from pypoolchem.dosing.calculator import DosingResult
 from .const import (
     CONF_ENABLE_DOSE_ACID,
     CONF_ENABLE_DOSE_ALKALINITY,
+    CONF_ENABLE_DOSE_BORATES,
     CONF_ENABLE_DOSE_CALCIUM,
     CONF_ENABLE_DOSE_CHLORINE,
     CONF_ENABLE_DOSE_CYA,
@@ -28,6 +29,7 @@ from .const import (
     CONF_POOL_TYPE,
     DEFAULT_ENABLE_DOSE_ACID,
     DEFAULT_ENABLE_DOSE_ALKALINITY,
+    DEFAULT_ENABLE_DOSE_BORATES,
     DEFAULT_ENABLE_DOSE_CALCIUM,
     DEFAULT_ENABLE_DOSE_CHLORINE,
     DEFAULT_ENABLE_DOSE_CYA,
@@ -35,12 +37,16 @@ from .const import (
     SENSOR_CSI,
     SENSOR_DOSE_ACID,
     SENSOR_DOSE_ALKALINITY,
+    SENSOR_DOSE_BORATES,
     SENSOR_DOSE_CALCIUM,
     SENSOR_DOSE_CHLORINE,
     SENSOR_DOSE_CYA,
     SENSOR_DOSE_SALT,
     SENSOR_FC_CYA_RATIO,
     SENSOR_LSI,
+    SENSOR_TARGET_CSI,
+    SENSOR_TARGET_LSI,
+    SENSOR_TARGET_WATER_BALANCE,
     SENSOR_WATER_BALANCE,
     PoolType,
     WaterBalanceState,
@@ -127,6 +133,45 @@ def _fc_cya_attrs(data: PoolChemData) -> dict[str, Any]:
     return attrs
 
 
+def _target_csi_value(data: PoolChemData) -> float | None:
+    """Get target CSI value."""
+    return round(data.target_csi, 2) if data.target_csi is not None else None
+
+
+def _target_csi_attrs(data: PoolChemData) -> dict[str, Any]:
+    """Get target CSI attributes showing target values used."""
+    attrs: dict[str, Any] = {}
+    if data.target_balance_state:
+        attrs["balance_state"] = data.target_balance_state.value
+    # Show the delta from current to target
+    if data.csi is not None and data.target_csi is not None:
+        attrs["delta_from_current"] = round(data.target_csi - data.csi, 2)
+    return attrs
+
+
+def _target_lsi_value(data: PoolChemData) -> float | None:
+    """Get target LSI value."""
+    return round(data.target_lsi, 2) if data.target_lsi is not None else None
+
+
+def _target_water_balance_value(data: PoolChemData) -> str:
+    """Get target water balance state."""
+    return data.target_balance_state.value
+
+
+def _target_water_balance_attrs(data: PoolChemData) -> dict[str, Any]:
+    """Get target water balance attributes."""
+    attrs: dict[str, Any] = {}
+    if data.target_csi is not None:
+        attrs["target_csi"] = round(data.target_csi, 2)
+    if data.target_lsi is not None:
+        attrs["target_lsi"] = round(data.target_lsi, 2)
+    # Compare to current balance
+    if data.balance_state:
+        attrs["current_balance"] = data.balance_state.value
+    return attrs
+
+
 def _make_dose_value_fn(
     dose_attr: str,
 ) -> Callable[[PoolChemData], float | None]:
@@ -204,6 +249,34 @@ WATER_BALANCE_SENSORS: tuple[PoolChemSensorEntityDescription, ...] = (
         extra_attrs_fn=_water_balance_attrs,
     ),
     PoolChemSensorEntityDescription(
+        key=SENSOR_TARGET_CSI,
+        translation_key="target_csi",
+        native_unit_of_measurement=None,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_target_csi_value,
+        extra_attrs_fn=_target_csi_attrs,
+        available_fn=lambda d: d.target_csi is not None,
+        icon="mdi:target",
+    ),
+    PoolChemSensorEntityDescription(
+        key=SENSOR_TARGET_LSI,
+        translation_key="target_lsi",
+        native_unit_of_measurement=None,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=_target_lsi_value,
+        available_fn=lambda d: d.target_lsi is not None,
+        icon="mdi:target",
+    ),
+    PoolChemSensorEntityDescription(
+        key=SENSOR_TARGET_WATER_BALANCE,
+        translation_key="target_water_balance",
+        device_class=SensorDeviceClass.ENUM,
+        options=[state.value for state in WaterBalanceState],
+        value_fn=_target_water_balance_value,
+        extra_attrs_fn=_target_water_balance_attrs,
+        icon="mdi:target",
+    ),
+    PoolChemSensorEntityDescription(
         key=SENSOR_FC_CYA_RATIO,
         translation_key="fc_cya_ratio",
         native_unit_of_measurement=PERCENTAGE,
@@ -276,6 +349,16 @@ DOSING_SENSORS: dict[str, PoolChemSensorEntityDescription] = {
         extra_attrs_fn=_make_dose_attrs_fn("dose_salt"),
         available_fn=_make_dose_available_fn("dose_salt"),
     ),
+    SENSOR_DOSE_BORATES: PoolChemSensorEntityDescription(
+        key=SENSOR_DOSE_BORATES,
+        translation_key="dose_borates",
+        native_unit_of_measurement="oz",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:flask-outline",
+        value_fn=_make_dose_value_fn("dose_borates"),
+        extra_attrs_fn=_make_dose_attrs_fn("dose_borates"),
+        available_fn=_make_dose_available_fn("dose_borates"),
+    ),
 }
 
 # Mapping of config keys to sensor keys
@@ -289,6 +372,7 @@ DOSING_CONFIG_MAP: dict[str, tuple[str, bool]] = {
     CONF_ENABLE_DOSE_CALCIUM: (SENSOR_DOSE_CALCIUM, DEFAULT_ENABLE_DOSE_CALCIUM),
     CONF_ENABLE_DOSE_CYA: (SENSOR_DOSE_CYA, DEFAULT_ENABLE_DOSE_CYA),
     CONF_ENABLE_DOSE_SALT: (SENSOR_DOSE_SALT, DEFAULT_ENABLE_DOSE_SALT),
+    CONF_ENABLE_DOSE_BORATES: (SENSOR_DOSE_BORATES, DEFAULT_ENABLE_DOSE_BORATES),
 }
 
 

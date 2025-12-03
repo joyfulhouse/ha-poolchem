@@ -32,6 +32,7 @@ CONF_TARGET_TA: Final = "target_ta"
 CONF_TARGET_CH: Final = "target_ch"
 CONF_TARGET_CYA: Final = "target_cya"
 CONF_TARGET_SALT: Final = "target_salt"
+CONF_TARGET_BORATES: Final = "target_borates"
 
 # Config entry keys - Chemical configuration (options flow)
 CONF_ACID_TYPE: Final = "acid_type"
@@ -45,6 +46,7 @@ CONF_ENABLE_DOSE_ALKALINITY: Final = "enable_dose_alkalinity"
 CONF_ENABLE_DOSE_CALCIUM: Final = "enable_dose_calcium"
 CONF_ENABLE_DOSE_CYA: Final = "enable_dose_cya"
 CONF_ENABLE_DOSE_SALT: Final = "enable_dose_salt"
+CONF_ENABLE_DOSE_BORATES: Final = "enable_dose_borates"
 
 # Required entity keys (for iteration)
 REQUIRED_ENTITIES: Final = [
@@ -110,6 +112,7 @@ DEFAULT_TARGET_TA: Final = 80
 DEFAULT_TARGET_CH: Final = 350
 DEFAULT_TARGET_CYA: Final = 40
 DEFAULT_TARGET_SALT: Final = 3200
+DEFAULT_TARGET_BORATES: Final = 50  # 50ppm is a common target for borate users
 
 # Default optional sensor values when not configured
 DEFAULT_CYA: Final = 0
@@ -121,6 +124,9 @@ DEFAULT_BORATES: Final = 0
 SENSOR_CSI: Final = "csi"
 SENSOR_LSI: Final = "lsi"
 SENSOR_WATER_BALANCE: Final = "water_balance"
+SENSOR_TARGET_CSI: Final = "target_csi"
+SENSOR_TARGET_LSI: Final = "target_lsi"
+SENSOR_TARGET_WATER_BALANCE: Final = "target_water_balance"
 SENSOR_FC_CYA_RATIO: Final = "fc_cya_ratio"
 SENSOR_DOSE_ACID: Final = "dose_acid"
 SENSOR_DOSE_CHLORINE: Final = "dose_chlorine"
@@ -128,6 +134,7 @@ SENSOR_DOSE_ALKALINITY: Final = "dose_alkalinity"
 SENSOR_DOSE_CALCIUM: Final = "dose_calcium"
 SENSOR_DOSE_CYA: Final = "dose_cya"
 SENSOR_DOSE_SALT: Final = "dose_salt"
+SENSOR_DOSE_BORATES: Final = "dose_borates"
 
 # Acid chemical types (mapped to pypoolchem ChemicalType)
 ACID_MURIATIC_14_5: Final = "muriatic_14_5"
@@ -187,3 +194,4 @@ DEFAULT_ENABLE_DOSE_ALKALINITY: Final = True
 DEFAULT_ENABLE_DOSE_CALCIUM: Final = True
 DEFAULT_ENABLE_DOSE_CYA: Final = True
 DEFAULT_ENABLE_DOSE_SALT: Final = False  # Only for saltwater pools
+DEFAULT_ENABLE_DOSE_BORATES: Final = False  # Not all pools use borates

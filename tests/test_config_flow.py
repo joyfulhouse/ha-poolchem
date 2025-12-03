@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.poolchem.const import (
     CONF_ACID_TYPE,
@@ -16,6 +17,7 @@ from custom_components.poolchem.const import (
     CONF_PH_ENTITY,
     CONF_POOL_NAME,
     CONF_POOL_TYPE,
+    CONF_SALT_ENTITY,
     CONF_SURFACE_TYPE,
     CONF_TA_ENTITY,
     CONF_TARGET_PH,
@@ -117,12 +119,17 @@ async def test_user_flow_creates_entry(
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == "My Pool"
+    # Pool info and entities go in data (immutable)
     assert result["data"][CONF_POOL_NAME] == "My Pool"
     assert result["data"][CONF_VOLUME_GALLONS] == 15000
     assert result["data"][CONF_POOL_TYPE] == PoolType.CHLORINE
     assert result["data"][CONF_TEMP_ENTITY] == "sensor.pool_temp"
     assert result["data"][CONF_CYA_ENTITY] == "sensor.pool_cya"
-    assert result["data"][CONF_TARGET_PH] == 7.6
+    # Targets, chemicals, dosing toggles go in options (editable via options flow)
+    assert result["options"][CONF_TARGET_PH] == 7.6
+    assert result["options"][CONF_ACID_TYPE] == DEFAULT_ACID_TYPE
+    assert result["options"][CONF_CHLORINE_TYPE] == DEFAULT_CHLORINE_TYPE
+    assert result["options"][CONF_ENABLE_DOSE_ACID] is True
 
 
 async def test_user_flow_minimal_config(
@@ -185,8 +192,8 @@ async def test_user_flow_minimal_config(
     assert result["title"] == "Simple Pool"
     # Optional entities should not be in data
     assert CONF_CYA_ENTITY not in result["data"]
-    # Defaults should be used
-    assert result["data"].get(CONF_TARGET_PH) == DEFAULT_TARGET_PH
+    # Defaults should be used in options
+    assert result["options"].get(CONF_TARGET_PH, DEFAULT_TARGET_PH) == DEFAULT_TARGET_PH
 
 
 async def test_user_flow_saltwater_pool(
@@ -250,3 +257,76 @@ async def test_user_flow_saltwater_pool(
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_POOL_TYPE] == PoolType.SALTWATER
+
+
+async def test_reconfigure_flow(
+    hass: HomeAssistant,
+    mock_source_entities: None,
+) -> None:
+    """Test reconfiguration flow."""
+    # First create an entry
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_POOL_NAME: "Old Pool",
+            CONF_VOLUME_GALLONS: 10000,
+            CONF_POOL_TYPE: PoolType.CHLORINE,
+            CONF_SURFACE_TYPE: SurfaceType.VINYL,
+            CONF_TEMP_ENTITY: "sensor.pool_temp",
+            CONF_PH_ENTITY: "sensor.pool_ph",
+            CONF_FC_ENTITY: "sensor.pool_fc",
+            CONF_TA_ENTITY: "sensor.pool_ta",
+            CONF_CH_ENTITY: "sensor.pool_ch",
+        },
+        options={
+            CONF_TARGET_PH: 7.4,
+        },
+    )
+    entry.add_to_hass(hass)
+
+    # Start reconfigure flow
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_RECONFIGURE, "entry_id": entry.entry_id},
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "reconfigure_pool"
+
+    # Step 1: Update pool configuration
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_POOL_NAME: "New Pool",
+            CONF_VOLUME_GALLONS: 20000,
+            CONF_POOL_TYPE: PoolType.SALTWATER,
+            CONF_SURFACE_TYPE: SurfaceType.PEBBLE,
+        },
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "reconfigure_entities"
+
+    # Step 2: Update entities (only required + selected optional fields)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_TEMP_ENTITY: "sensor.pool_temp",
+            CONF_PH_ENTITY: "sensor.pool_ph",
+            CONF_FC_ENTITY: "sensor.pool_fc",
+            CONF_TA_ENTITY: "sensor.pool_ta",
+            CONF_CH_ENTITY: "sensor.pool_ch",
+            CONF_SALT_ENTITY: "sensor.pool_salt",
+        },
+    )
+
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+
+    # Verify the entry was updated
+    assert entry.data[CONF_POOL_NAME] == "New Pool"
+    assert entry.data[CONF_VOLUME_GALLONS] == 20000
+    assert entry.data[CONF_POOL_TYPE] == PoolType.SALTWATER
+    assert entry.data[CONF_SALT_ENTITY] == "sensor.pool_salt"
+    # Options should be preserved
+    assert entry.options[CONF_TARGET_PH] == 7.4

@@ -29,6 +29,7 @@ from pypoolchem import (
     ChemicalType,
     WaterChemistry,
     calculate_alkalinity_dose,
+    calculate_borate_dose,
     calculate_calcium_dose,
     calculate_chlorine_dose,
     calculate_csi,
@@ -61,6 +62,7 @@ from .const import (
     CONF_CYA_ENTITY,
     CONF_ENABLE_DOSE_ACID,
     CONF_ENABLE_DOSE_ALKALINITY,
+    CONF_ENABLE_DOSE_BORATES,
     CONF_ENABLE_DOSE_CALCIUM,
     CONF_ENABLE_DOSE_CHLORINE,
     CONF_ENABLE_DOSE_CYA,
@@ -71,6 +73,7 @@ from .const import (
     CONF_POOL_TYPE,
     CONF_SALT_ENTITY,
     CONF_TA_ENTITY,
+    CONF_TARGET_BORATES,
     CONF_TARGET_CH,
     CONF_TARGET_CYA,
     CONF_TARGET_FC,
@@ -90,11 +93,13 @@ from .const import (
     DEFAULT_CYA,
     DEFAULT_ENABLE_DOSE_ACID,
     DEFAULT_ENABLE_DOSE_ALKALINITY,
+    DEFAULT_ENABLE_DOSE_BORATES,
     DEFAULT_ENABLE_DOSE_CALCIUM,
     DEFAULT_ENABLE_DOSE_CHLORINE,
     DEFAULT_ENABLE_DOSE_CYA,
     DEFAULT_ENABLE_DOSE_SALT,
     DEFAULT_SALT,
+    DEFAULT_TARGET_BORATES,
     DEFAULT_TARGET_CH,
     DEFAULT_TARGET_CYA,
     DEFAULT_TARGET_FC,
@@ -143,6 +148,11 @@ class PoolChemData:
     lsi: float | None = None
     balance_state: WaterBalanceState = WaterBalanceState.UNKNOWN
 
+    # Target water balance indices (what CSI/LSI would be if targets achieved)
+    target_csi: float | None = None
+    target_lsi: float | None = None
+    target_balance_state: WaterBalanceState = WaterBalanceState.UNKNOWN
+
     # FC/CYA relationship
     fc_cya_ratio: float | None = None
     fc_is_adequate: bool | None = None
@@ -154,6 +164,7 @@ class PoolChemData:
     dose_calcium: DosingResult | None = None
     dose_cya: DosingResult | None = None
     dose_salt: DosingResult | None = None
+    dose_borates: DosingResult | None = None
 
     # Metadata
     last_updated: datetime | None = None
@@ -211,20 +222,17 @@ class PoolChemCoordinator(DataUpdateCoordinator[PoolChemData]):
         """Return True if this is a saltwater pool."""
         return self.pool_type == PoolType.SALTWATER
 
-    def _get_config_value(self, key: str, default: Any) -> Any:
-        """Get config value from options first, then data, then default.
+    def _get_option(self, key: str, default: Any) -> Any:
+        """Get option value from options, falling back to default.
 
-        Options take precedence (for reconfiguration), then data (initial setup).
+        Options contain targets, chemical types, and dosing toggles.
+        These are set during initial config flow and editable via options flow.
         """
-        if key in self.config_entry.options:
-            return self.config_entry.options[key]
-        if key in self.config_entry.data:
-            return self.config_entry.data[key]
-        return default
+        return self.config_entry.options.get(key, default)
 
     def _get_target(self, key: str, default: float) -> float:
-        """Get target value from config."""
-        return float(self._get_config_value(key, default))
+        """Get target value from options."""
+        return float(self._get_option(key, default))
 
     @property
     def target_ph(self) -> float:
@@ -256,21 +264,24 @@ class PoolChemCoordinator(DataUpdateCoordinator[PoolChemData]):
         """Return target salt level."""
         return self._get_target(CONF_TARGET_SALT, DEFAULT_TARGET_SALT)
 
+    @property
+    def target_borates(self) -> float:
+        """Return target borates level."""
+        return self._get_target(CONF_TARGET_BORATES, DEFAULT_TARGET_BORATES)
+
     def _get_acid_chemical_type(self) -> ChemicalType:
         """Get the configured acid chemical type."""
-        acid_type = self._get_config_value(CONF_ACID_TYPE, DEFAULT_ACID_TYPE)
+        acid_type = self._get_option(CONF_ACID_TYPE, DEFAULT_ACID_TYPE)
         return ACID_TYPE_MAP.get(acid_type, ChemicalType.MURIATIC_ACID_31_45)
 
     def _get_chlorine_chemical_type(self) -> ChemicalType:
         """Get the configured chlorine chemical type."""
-        chlorine_type = self._get_config_value(
-            CONF_CHLORINE_TYPE, DEFAULT_CHLORINE_TYPE
-        )
+        chlorine_type = self._get_option(CONF_CHLORINE_TYPE, DEFAULT_CHLORINE_TYPE)
         return CHLORINE_TYPE_MAP.get(chlorine_type, ChemicalType.BLEACH_12_5)
 
     def _is_dose_enabled(self, key: str, default: bool) -> bool:
         """Check if a dosing sensor is enabled."""
-        return bool(self._get_config_value(key, default))
+        return bool(self._get_option(key, default))
 
     async def async_setup(self) -> None:
         """Set up event listeners for source entities."""
@@ -356,6 +367,24 @@ class PoolChemCoordinator(DataUpdateCoordinator[PoolChemData]):
                 data.csi = calculate_csi(water)
                 data.lsi = calculate_lsi(water)
                 data.balance_state = self._determine_balance_state(data.csi)
+
+                # Calculate target water balance (what CSI/LSI would be with targets)
+                target_water = WaterChemistry(
+                    ph=self.target_ph,
+                    temperature_f=temp_f,
+                    free_chlorine=self.target_fc,
+                    total_alkalinity=self.target_ta,
+                    calcium_hardness=self.target_ch,
+                    cyanuric_acid=self.target_cya,
+                    salt=self.target_salt if self.is_saltwater else salt,
+                    tds=tds,
+                    borates=self.target_borates,
+                )
+                data.target_csi = calculate_csi(target_water)
+                data.target_lsi = calculate_lsi(target_water)
+                data.target_balance_state = self._determine_balance_state(
+                    data.target_csi
+                )
 
             except Exception as err:
                 errors.append(f"Water balance calculation failed: {err}")
@@ -546,3 +575,14 @@ class PoolChemCoordinator(DataUpdateCoordinator[PoolChemData]):
                 )
             except Exception as err:
                 _LOGGER.debug("Salt dose calculation failed: %s", err)
+
+        # Borates dose
+        if self._is_dose_enabled(CONF_ENABLE_DOSE_BORATES, DEFAULT_ENABLE_DOSE_BORATES):
+            try:
+                data.dose_borates = calculate_borate_dose(
+                    current_borates=borates,
+                    target_borates=self.target_borates,
+                    pool_gallons=volume,
+                )
+            except Exception as err:
+                _LOGGER.debug("Borates dose calculation failed: %s", err)

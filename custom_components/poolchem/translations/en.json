@@ -61,7 +61,33 @@
           "enable_dose_alkalinity": "Enable Alkalinity Dose Sensor",
           "enable_dose_calcium": "Enable Calcium Dose Sensor",
           "enable_dose_cya": "Enable Stabilizer Dose Sensor",
-          "enable_dose_salt": "Enable Salt Dose Sensor"
+          "enable_dose_salt": "Enable Salt Dose Sensor",
+          "enable_dose_borates": "Enable Borates Dose Sensor"
+        }
+      },
+      "reconfigure_pool": {
+        "title": "Reconfigure Pool",
+        "description": "Update your pool settings.",
+        "data": {
+          "pool_name": "Pool Name",
+          "volume_gallons": "Pool Volume",
+          "pool_type": "Pool Type",
+          "surface_type": "Surface Type"
+        }
+      },
+      "reconfigure_entities": {
+        "title": "Reconfigure Sensors",
+        "description": "Update sensor entity mappings.",
+        "data": {
+          "temp_entity": "Temperature Sensor",
+          "ph_entity": "pH Sensor",
+          "fc_entity": "Free Chlorine Sensor",
+          "ta_entity": "Total Alkalinity Sensor",
+          "ch_entity": "Calcium Hardness Sensor",
+          "cya_entity": "Cyanuric Acid (Stabilizer) Sensor",
+          "salt_entity": "Salt Sensor",
+          "tds_entity": "Total Dissolved Solids Sensor",
+          "borates_entity": "Borates Sensor"
         }
       }
     },
@@ -70,7 +96,8 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "Pool is already configured"
+      "already_configured": "Pool is already configured",
+      "reconfigure_failed": "Failed to reconfigure - entry not found"
     }
   },
   "options": {
@@ -104,7 +131,8 @@
           "enable_dose_alkalinity": "Enable Alkalinity Dose Sensor",
           "enable_dose_calcium": "Enable Calcium Dose Sensor",
           "enable_dose_cya": "Enable Stabilizer Dose Sensor",
-          "enable_dose_salt": "Enable Salt Dose Sensor"
+          "enable_dose_salt": "Enable Salt Dose Sensor",
+          "enable_dose_borates": "Enable Borates Dose Sensor"
         }
       }
     }
@@ -149,6 +177,29 @@
     }
   },
   "entity": {
+    "number": {
+      "target_ph": {
+        "name": "Target pH"
+      },
+      "target_fc": {
+        "name": "Target Free Chlorine"
+      },
+      "target_ta": {
+        "name": "Target Total Alkalinity"
+      },
+      "target_ch": {
+        "name": "Target Calcium Hardness"
+      },
+      "target_cya": {
+        "name": "Target Cyanuric Acid"
+      },
+      "target_salt": {
+        "name": "Target Salt Level"
+      },
+      "target_borates": {
+        "name": "Target Borates"
+      }
+    },
     "sensor": {
       "csi": {
         "name": "CSI"
@@ -158,6 +209,23 @@
       },
       "water_balance": {
         "name": "Water Balance",
+        "state": {
+          "severely_corrosive": "Severely Corrosive",
+          "slightly_corrosive": "Slightly Corrosive",
+          "balanced": "Balanced",
+          "slightly_scaling": "Slightly Scaling",
+          "severely_scaling": "Severely Scaling",
+          "unknown": "Unknown"
+        }
+      },
+      "target_csi": {
+        "name": "Target CSI"
+      },
+      "target_lsi": {
+        "name": "Target LSI"
+      },
+      "target_water_balance": {
+        "name": "Target Water Balance",
         "state": {
           "severely_corrosive": "Severely Corrosive",
           "slightly_corrosive": "Slightly Corrosive",
@@ -187,6 +255,9 @@
       },
       "dose_salt": {
         "name": "Salt Dose"
+      },
+      "dose_borates": {
+        "name": "Borates Dose"
       }
     }
   }

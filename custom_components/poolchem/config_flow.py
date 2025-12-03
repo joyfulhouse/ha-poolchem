@@ -37,6 +37,7 @@ from .const import (
     CONF_CYA_ENTITY,
     CONF_ENABLE_DOSE_ACID,
     CONF_ENABLE_DOSE_ALKALINITY,
+    CONF_ENABLE_DOSE_BORATES,
     CONF_ENABLE_DOSE_CALCIUM,
     CONF_ENABLE_DOSE_CHLORINE,
     CONF_ENABLE_DOSE_CYA,
@@ -61,6 +62,7 @@ from .const import (
     DEFAULT_CHLORINE_TYPE,
     DEFAULT_ENABLE_DOSE_ACID,
     DEFAULT_ENABLE_DOSE_ALKALINITY,
+    DEFAULT_ENABLE_DOSE_BORATES,
     DEFAULT_ENABLE_DOSE_CALCIUM,
     DEFAULT_ENABLE_DOSE_CHLORINE,
     DEFAULT_ENABLE_DOSE_CYA,
@@ -87,13 +89,159 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self._data: dict[str, Any] = {}
+        self._data: dict[str, Any] = {}  # Pool info + entity mappings
+        self._options: dict[str, Any] = {}  # Targets, chemicals, dosing toggles
+        self._reconfigure_entry: ConfigEntry | None = None
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlowHandler:
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle reconfiguration of the integration."""
+        self._reconfigure_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        if self._reconfigure_entry is None:
+            return self.async_abort(reason="reconfigure_failed")
+
+        # Pre-populate data from existing entry
+        self._data = dict(self._reconfigure_entry.data)
+        self._options = dict(self._reconfigure_entry.options)
+
+        return await self.async_step_reconfigure_pool(user_input)
+
+    async def async_step_reconfigure_pool(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle pool reconfiguration."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self.async_step_reconfigure_entities()
+
+        current = self._data
+
+        return self.async_show_form(
+            step_id="reconfigure_pool",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_POOL_NAME, default=current.get(CONF_POOL_NAME, "Pool")
+                    ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+                    vol.Required(
+                        CONF_VOLUME_GALLONS,
+                        default=current.get(CONF_VOLUME_GALLONS, 15000),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=100,
+                            max=1000000,
+                            step=100,
+                            mode=NumberSelectorMode.BOX,
+                            unit_of_measurement="gallons",
+                        )
+                    ),
+                    vol.Required(
+                        CONF_POOL_TYPE,
+                        default=current.get(CONF_POOL_TYPE, PoolType.CHLORINE),
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[pt.value for pt in PoolType],
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key="pool_type",
+                        )
+                    ),
+                    vol.Required(
+                        CONF_SURFACE_TYPE,
+                        default=current.get(CONF_SURFACE_TYPE, SurfaceType.PLASTER),
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=[st.value for st in SurfaceType],
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key="surface_type",
+                        )
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_reconfigure_entities(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle entity reconfiguration."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            # Filter out empty strings from optional entities
+            filtered_input = {k: v for k, v in user_input.items() if v}
+            # Remove any optional entities that were cleared
+            for key in [
+                CONF_CYA_ENTITY,
+                CONF_SALT_ENTITY,
+                CONF_TDS_ENTITY,
+                CONF_BORATES_ENTITY,
+            ]:
+                if key in self._data and key not in filtered_input:
+                    del self._data[key]
+            self._data.update(filtered_input)
+
+            # Update the config entry
+            return self.async_update_reload_and_abort(
+                self._reconfigure_entry,  # type: ignore[arg-type]
+                data=self._data,
+                options=self._options,
+            )
+
+        current = self._data
+        sensor_selector = EntitySelector(EntitySelectorConfig(domain="sensor"))
+
+        # Build schema - optional fields without defaults to allow empty selection
+        schema_dict: dict[vol.Marker, Any] = {
+            vol.Required(
+                CONF_TEMP_ENTITY, default=current.get(CONF_TEMP_ENTITY)
+            ): sensor_selector,
+            vol.Required(
+                CONF_PH_ENTITY, default=current.get(CONF_PH_ENTITY)
+            ): sensor_selector,
+            vol.Required(
+                CONF_FC_ENTITY, default=current.get(CONF_FC_ENTITY)
+            ): sensor_selector,
+            vol.Required(
+                CONF_TA_ENTITY, default=current.get(CONF_TA_ENTITY)
+            ): sensor_selector,
+            vol.Required(
+                CONF_CH_ENTITY, default=current.get(CONF_CH_ENTITY)
+            ): sensor_selector,
+            vol.Optional(CONF_CYA_ENTITY): sensor_selector,
+            vol.Optional(CONF_SALT_ENTITY): sensor_selector,
+            vol.Optional(CONF_TDS_ENTITY): sensor_selector,
+            vol.Optional(CONF_BORATES_ENTITY): sensor_selector,
+        }
+
+        # Set suggested values for optional fields if they exist
+        suggested_values: dict[str, Any] = {}
+        for key in [
+            CONF_CYA_ENTITY,
+            CONF_SALT_ENTITY,
+            CONF_TDS_ENTITY,
+            CONF_BORATES_ENTITY,
+        ]:
+            if current.get(key):
+                suggested_values[key] = current[key]
+
+        return self.async_show_form(
+            step_id="reconfigure_entities",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(schema_dict), suggested_values
+            ),
+            errors=errors,
+        )
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -199,7 +347,7 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     ) -> ConfigFlowResult:
         """Handle the target chemistry values step."""
         if user_input is not None:
-            self._data.update(user_input)
+            self._options.update(user_input)
             return await self.async_step_chemicals()
 
         is_saltwater = self._data.get(CONF_POOL_TYPE) == PoolType.SALTWATER
@@ -275,7 +423,7 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     ) -> ConfigFlowResult:
         """Handle the chemical types step."""
         if user_input is not None:
-            self._data.update(user_input)
+            self._options.update(user_input)
             return await self.async_step_dosing_sensors()
 
         return self.async_show_form(
@@ -309,11 +457,13 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
     ) -> ConfigFlowResult:
         """Handle the dosing sensors enablement step."""
         if user_input is not None:
-            self._data.update(user_input)
-            # Create the config entry with all data
+            self._options.update(user_input)
+            # Create the config entry with data (pool info + entities)
+            # and options (targets, chemicals, dosing toggles)
             return self.async_create_entry(
                 title=self._data[CONF_POOL_NAME],
                 data=self._data,
+                options=self._options,
             )
 
         is_saltwater = self._data.get(CONF_POOL_TYPE) == PoolType.SALTWATER
@@ -330,6 +480,9 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                 CONF_ENABLE_DOSE_CALCIUM, default=DEFAULT_ENABLE_DOSE_CALCIUM
             ): bool,
             vol.Optional(CONF_ENABLE_DOSE_CYA, default=DEFAULT_ENABLE_DOSE_CYA): bool,
+            vol.Optional(
+                CONF_ENABLE_DOSE_BORATES, default=DEFAULT_ENABLE_DOSE_BORATES
+            ): bool,
         }
 
         # Only show salt dosing for saltwater pools
@@ -520,6 +673,12 @@ class OptionsFlowHandler(OptionsFlow):
             vol.Optional(
                 CONF_ENABLE_DOSE_CYA,
                 default=current.get(CONF_ENABLE_DOSE_CYA, DEFAULT_ENABLE_DOSE_CYA),
+            ): bool,
+            vol.Optional(
+                CONF_ENABLE_DOSE_BORATES,
+                default=current.get(
+                    CONF_ENABLE_DOSE_BORATES, DEFAULT_ENABLE_DOSE_BORATES
+                ),
             ): bool,
         }
 

@@ -6,8 +6,10 @@ from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 
+from .const import ALL_ENTITY_KEYS
 from .coordinator import PoolChemCoordinator
 
 TO_REDACT = {
@@ -17,7 +19,7 @@ TO_REDACT = {
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant,  # noqa: ARG001
+    hass: HomeAssistant,
     entry: ConfigEntry,
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
@@ -25,6 +27,30 @@ async def async_get_config_entry_diagnostics(
 
     # Get coordinator data
     data = coordinator.data
+
+    # Gather source sensor readings
+    source_sensors: dict[str, dict[str, Any]] = {}
+    for key in ALL_ENTITY_KEYS:
+        entity_id = entry.data.get(key)
+        if entity_id:
+            state = hass.states.get(entity_id)
+            if state is not None:
+                sensor_data: dict[str, Any] = {
+                    "entity_id": entity_id,
+                    "state": state.state,
+                    "available": state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN),
+                }
+                # Include unit of measurement if present
+                if "unit_of_measurement" in state.attributes:
+                    sensor_data["unit"] = state.attributes["unit_of_measurement"]
+                source_sensors[key] = sensor_data
+            else:
+                source_sensors[key] = {
+                    "entity_id": entity_id,
+                    "state": None,
+                    "available": False,
+                    "error": "Entity not found",
+                }
 
     diagnostics: dict[str, Any] = {
         "config_entry": {
@@ -36,6 +62,7 @@ async def async_get_config_entry_diagnostics(
             "data": async_redact_data(dict(entry.data), TO_REDACT),
             "options": dict(entry.options),
         },
+        "source_sensors": source_sensors,
         "coordinator": {
             "pool_name": coordinator.pool_name,
             "pool_volume": coordinator.pool_volume,
