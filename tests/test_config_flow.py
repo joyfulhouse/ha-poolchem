@@ -7,16 +7,23 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.poolchem.const import (
+    CONF_ACID_TYPE,
     CONF_CH_ENTITY,
+    CONF_CHLORINE_TYPE,
     CONF_CYA_ENTITY,
+    CONF_ENABLE_DOSE_ACID,
     CONF_FC_ENTITY,
     CONF_PH_ENTITY,
     CONF_POOL_NAME,
     CONF_POOL_TYPE,
     CONF_SURFACE_TYPE,
     CONF_TA_ENTITY,
+    CONF_TARGET_PH,
     CONF_TEMP_ENTITY,
     CONF_VOLUME_GALLONS,
+    DEFAULT_ACID_TYPE,
+    DEFAULT_CHLORINE_TYPE,
+    DEFAULT_TARGET_PH,
     DOMAIN,
     PoolType,
     SurfaceType,
@@ -66,11 +73,45 @@ async def test_user_flow_creates_entry(
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "optional_entities"
 
-    # Step 3: Optional entities (skip by providing empty)
+    # Step 3: Optional entities
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
             CONF_CYA_ENTITY: "sensor.pool_cya",
+        },
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "targets"
+
+    # Step 4: Target chemistry values (use defaults)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_TARGET_PH: 7.6,
+        },
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "chemicals"
+
+    # Step 5: Chemical types (use defaults)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_ACID_TYPE: DEFAULT_ACID_TYPE,
+            CONF_CHLORINE_TYPE: DEFAULT_CHLORINE_TYPE,
+        },
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "dosing_sensors"
+
+    # Step 6: Dosing sensors (use defaults)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            CONF_ENABLE_DOSE_ACID: True,
         },
     )
 
@@ -81,6 +122,7 @@ async def test_user_flow_creates_entry(
     assert result["data"][CONF_POOL_TYPE] == PoolType.CHLORINE
     assert result["data"][CONF_TEMP_ENTITY] == "sensor.pool_temp"
     assert result["data"][CONF_CYA_ENTITY] == "sensor.pool_cya"
+    assert result["data"][CONF_TARGET_PH] == 7.6
 
 
 async def test_user_flow_minimal_config(
@@ -121,10 +163,30 @@ async def test_user_flow_minimal_config(
         {},
     )
 
+    # Step 4: Target chemistry values (use defaults)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
+    )
+
+    # Step 5: Chemical types (use defaults)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
+    )
+
+    # Step 6: Dosing sensors (use defaults)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
+    )
+
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == "Simple Pool"
     # Optional entities should not be in data
     assert CONF_CYA_ENTITY not in result["data"]
+    # Defaults should be used
+    assert result["data"].get(CONF_TARGET_PH) == DEFAULT_TARGET_PH
 
 
 async def test_user_flow_saltwater_pool(
@@ -166,6 +228,24 @@ async def test_user_flow_saltwater_pool(
             "salt_entity": "sensor.pool_salt",
             "cya_entity": "sensor.pool_cya",
         },
+    )
+
+    # Step 4: Target chemistry values
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
+    )
+
+    # Step 5: Chemical types
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
+    )
+
+    # Step 6: Dosing sensors
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {},
     )
 
     assert result["type"] == FlowResultType.CREATE_ENTRY

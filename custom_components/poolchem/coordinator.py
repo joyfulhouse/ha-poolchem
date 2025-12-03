@@ -10,6 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 import logging
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -210,9 +211,20 @@ class PoolChemCoordinator(DataUpdateCoordinator[PoolChemData]):
         """Return True if this is a saltwater pool."""
         return self.pool_type == PoolType.SALTWATER
 
+    def _get_config_value(self, key: str, default: Any) -> Any:
+        """Get config value from options first, then data, then default.
+
+        Options take precedence (for reconfiguration), then data (initial setup).
+        """
+        if key in self.config_entry.options:
+            return self.config_entry.options[key]
+        if key in self.config_entry.data:
+            return self.config_entry.data[key]
+        return default
+
     def _get_target(self, key: str, default: float) -> float:
-        """Get target value from options or use default."""
-        return float(self.config_entry.options.get(key, default))
+        """Get target value from config."""
+        return float(self._get_config_value(key, default))
 
     @property
     def target_ph(self) -> float:
@@ -246,19 +258,19 @@ class PoolChemCoordinator(DataUpdateCoordinator[PoolChemData]):
 
     def _get_acid_chemical_type(self) -> ChemicalType:
         """Get the configured acid chemical type."""
-        acid_type = self.config_entry.options.get(CONF_ACID_TYPE, DEFAULT_ACID_TYPE)
+        acid_type = self._get_config_value(CONF_ACID_TYPE, DEFAULT_ACID_TYPE)
         return ACID_TYPE_MAP.get(acid_type, ChemicalType.MURIATIC_ACID_31_45)
 
     def _get_chlorine_chemical_type(self) -> ChemicalType:
         """Get the configured chlorine chemical type."""
-        chlorine_type = self.config_entry.options.get(
+        chlorine_type = self._get_config_value(
             CONF_CHLORINE_TYPE, DEFAULT_CHLORINE_TYPE
         )
         return CHLORINE_TYPE_MAP.get(chlorine_type, ChemicalType.BLEACH_12_5)
 
     def _is_dose_enabled(self, key: str, default: bool) -> bool:
         """Check if a dosing sensor is enabled."""
-        return bool(self.config_entry.options.get(key, default))
+        return bool(self._get_config_value(key, default))
 
     async def async_setup(self) -> None:
         """Set up event listeners for source entities."""

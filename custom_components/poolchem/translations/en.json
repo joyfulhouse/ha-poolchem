@@ -31,6 +31,38 @@
           "tds_entity": "Total Dissolved Solids Sensor",
           "borates_entity": "Borates Sensor"
         }
+      },
+      "targets": {
+        "title": "Target Chemistry Values",
+        "description": "Set target values for dosing calculations.",
+        "data": {
+          "target_ph": "Target pH",
+          "target_fc": "Target Free Chlorine",
+          "target_ta": "Target Total Alkalinity",
+          "target_ch": "Target Calcium Hardness",
+          "target_cya": "Target Cyanuric Acid",
+          "target_salt": "Target Salt Level"
+        }
+      },
+      "chemicals": {
+        "title": "Chemical Types",
+        "description": "Select the chemicals you use for pool maintenance.",
+        "data": {
+          "acid_type": "Acid Type (for lowering pH)",
+          "chlorine_type": "Chlorine Type"
+        }
+      },
+      "dosing_sensors": {
+        "title": "Dosing Sensors",
+        "description": "Enable or disable dosing recommendation sensors.",
+        "data": {
+          "enable_dose_acid": "Enable Acid Dose Sensor",
+          "enable_dose_chlorine": "Enable Chlorine Dose Sensor",
+          "enable_dose_alkalinity": "Enable Alkalinity Dose Sensor",
+          "enable_dose_calcium": "Enable Calcium Dose Sensor",
+          "enable_dose_cya": "Enable Stabilizer Dose Sensor",
+          "enable_dose_salt": "Enable Salt Dose Sensor"
+        }
       }
     },
     "error": {
