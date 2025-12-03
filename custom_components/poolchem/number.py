@@ -178,10 +178,11 @@ class PoolChemNumber(PoolChemEntity, NumberEntity):
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return self._entry.options.get(
+        value = self._entry.options.get(
             self.entity_description.config_key,
             self.entity_description.default_value,
         )
+        return float(value)
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the target value."""

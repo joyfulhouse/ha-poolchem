@@ -32,18 +32,6 @@
           "borates_entity": "Borates Sensor"
         }
       },
-      "targets": {
-        "title": "Target Chemistry Values",
-        "description": "Set target values for dosing calculations.",
-        "data": {
-          "target_ph": "Target pH",
-          "target_fc": "Target Free Chlorine",
-          "target_ta": "Target Total Alkalinity",
-          "target_ch": "Target Calcium Hardness",
-          "target_cya": "Target Cyanuric Acid",
-          "target_salt": "Target Salt Level"
-        }
-      },
       "chemicals": {
         "title": "Chemical Types",
         "description": "Select the chemicals you use for pool maintenance.",
@@ -102,18 +90,6 @@
   },
   "options": {
     "step": {
-      "init": {
-        "title": "Target Chemistry Values",
-        "description": "Set target values for {name}. These are used for dosing calculations.",
-        "data": {
-          "target_ph": "Target pH",
-          "target_fc": "Target Free Chlorine",
-          "target_ta": "Target Total Alkalinity",
-          "target_ch": "Target Calcium Hardness",
-          "target_cya": "Target Cyanuric Acid",
-          "target_salt": "Target Salt Level"
-        }
-      },
       "chemicals": {
         "title": "Chemical Types",
         "description": "Select the chemicals you use for pool maintenance.",

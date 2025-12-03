@@ -20,12 +20,10 @@ from custom_components.poolchem.const import (
     CONF_SALT_ENTITY,
     CONF_SURFACE_TYPE,
     CONF_TA_ENTITY,
-    CONF_TARGET_PH,
     CONF_TEMP_ENTITY,
     CONF_VOLUME_GALLONS,
     DEFAULT_ACID_TYPE,
     DEFAULT_CHLORINE_TYPE,
-    DEFAULT_TARGET_PH,
     DOMAIN,
     PoolType,
     SurfaceType,
@@ -84,20 +82,9 @@ async def test_user_flow_creates_entry(
     )
 
     assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "targets"
-
-    # Step 4: Target chemistry values (use defaults)
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            CONF_TARGET_PH: 7.6,
-        },
-    )
-
-    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "chemicals"
 
-    # Step 5: Chemical types (use defaults)
+    # Step 4: Chemical types (use defaults)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
@@ -109,7 +96,7 @@ async def test_user_flow_creates_entry(
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "dosing_sensors"
 
-    # Step 6: Dosing sensors (use defaults)
+    # Step 5: Dosing sensors (use defaults)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {
@@ -125,8 +112,7 @@ async def test_user_flow_creates_entry(
     assert result["data"][CONF_POOL_TYPE] == PoolType.CHLORINE
     assert result["data"][CONF_TEMP_ENTITY] == "sensor.pool_temp"
     assert result["data"][CONF_CYA_ENTITY] == "sensor.pool_cya"
-    # Targets, chemicals, dosing toggles go in options (editable via options flow)
-    assert result["options"][CONF_TARGET_PH] == 7.6
+    # Chemicals, dosing toggles go in options (targets are now number entities)
     assert result["options"][CONF_ACID_TYPE] == DEFAULT_ACID_TYPE
     assert result["options"][CONF_CHLORINE_TYPE] == DEFAULT_CHLORINE_TYPE
     assert result["options"][CONF_ENABLE_DOSE_ACID] is True
@@ -170,19 +156,13 @@ async def test_user_flow_minimal_config(
         {},
     )
 
-    # Step 4: Target chemistry values (use defaults)
+    # Step 4: Chemical types (use defaults)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {},
     )
 
-    # Step 5: Chemical types (use defaults)
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {},
-    )
-
-    # Step 6: Dosing sensors (use defaults)
+    # Step 5: Dosing sensors (use defaults)
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {},
@@ -192,8 +172,6 @@ async def test_user_flow_minimal_config(
     assert result["title"] == "Simple Pool"
     # Optional entities should not be in data
     assert CONF_CYA_ENTITY not in result["data"]
-    # Defaults should be used in options
-    assert result["options"].get(CONF_TARGET_PH, DEFAULT_TARGET_PH) == DEFAULT_TARGET_PH
 
 
 async def test_user_flow_saltwater_pool(
@@ -237,19 +215,13 @@ async def test_user_flow_saltwater_pool(
         },
     )
 
-    # Step 4: Target chemistry values
+    # Step 4: Chemical types
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {},
     )
 
-    # Step 5: Chemical types
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {},
-    )
-
-    # Step 6: Dosing sensors
+    # Step 5: Dosing sensors
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         {},
@@ -279,7 +251,7 @@ async def test_reconfigure_flow(
             CONF_CH_ENTITY: "sensor.pool_ch",
         },
         options={
-            CONF_TARGET_PH: 7.4,
+            CONF_ACID_TYPE: DEFAULT_ACID_TYPE,
         },
     )
     entry.add_to_hass(hass)
@@ -287,7 +259,10 @@ async def test_reconfigure_flow(
     # Start reconfigure flow
     result = await hass.config_entries.flow.async_init(
         DOMAIN,
-        context={"source": config_entries.SOURCE_RECONFIGURE, "entry_id": entry.entry_id},
+        context={
+            "source": config_entries.SOURCE_RECONFIGURE,
+            "entry_id": entry.entry_id,
+        },
     )
 
     assert result["type"] == FlowResultType.FORM
@@ -329,4 +304,4 @@ async def test_reconfigure_flow(
     assert entry.data[CONF_POOL_TYPE] == PoolType.SALTWATER
     assert entry.data[CONF_SALT_ENTITY] == "sensor.pool_salt"
     # Options should be preserved
-    assert entry.options[CONF_TARGET_PH] == 7.4
+    assert entry.options[CONF_ACID_TYPE] == DEFAULT_ACID_TYPE

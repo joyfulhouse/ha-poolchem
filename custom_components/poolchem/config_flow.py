@@ -49,12 +49,6 @@ from .const import (
     CONF_SALT_ENTITY,
     CONF_SURFACE_TYPE,
     CONF_TA_ENTITY,
-    CONF_TARGET_CH,
-    CONF_TARGET_CYA,
-    CONF_TARGET_FC,
-    CONF_TARGET_PH,
-    CONF_TARGET_SALT,
-    CONF_TARGET_TA,
     CONF_TDS_ENTITY,
     CONF_TEMP_ENTITY,
     CONF_VOLUME_GALLONS,
@@ -67,12 +61,6 @@ from .const import (
     DEFAULT_ENABLE_DOSE_CHLORINE,
     DEFAULT_ENABLE_DOSE_CYA,
     DEFAULT_ENABLE_DOSE_SALT,
-    DEFAULT_TARGET_CH,
-    DEFAULT_TARGET_CYA,
-    DEFAULT_TARGET_FC,
-    DEFAULT_TARGET_PH,
-    DEFAULT_TARGET_SALT,
-    DEFAULT_TARGET_TA,
     DOMAIN,
     PoolType,
     SurfaceType,
@@ -81,7 +69,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
+class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):
     """Handle a config flow for Pool Chemistry."""
 
     VERSION = 1
@@ -326,7 +314,7 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
             # Filter out empty strings
             filtered_input = {k: v for k, v in user_input.items() if v}
             self._data.update(filtered_input)
-            return await self.async_step_targets()
+            return await self.async_step_chemicals()
 
         sensor_selector = EntitySelector(EntitySelectorConfig(domain="sensor"))
 
@@ -340,82 +328,6 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):  # type: ignore[call-arg]
                     vol.Optional(CONF_BORATES_ENTITY): sensor_selector,
                 }
             ),
-        )
-
-    async def async_step_targets(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle the target chemistry values step."""
-        if user_input is not None:
-            self._options.update(user_input)
-            return await self.async_step_chemicals()
-
-        is_saltwater = self._data.get(CONF_POOL_TYPE) == PoolType.SALTWATER
-
-        schema_dict: dict[vol.Marker, Any] = {
-            vol.Optional(CONF_TARGET_PH, default=DEFAULT_TARGET_PH): NumberSelector(
-                NumberSelectorConfig(
-                    min=6.8,
-                    max=8.0,
-                    step=0.1,
-                    mode=NumberSelectorMode.BOX,
-                )
-            ),
-            vol.Optional(CONF_TARGET_FC, default=DEFAULT_TARGET_FC): NumberSelector(
-                NumberSelectorConfig(
-                    min=1,
-                    max=20,
-                    step=0.5,
-                    mode=NumberSelectorMode.BOX,
-                    unit_of_measurement="ppm",
-                )
-            ),
-            vol.Optional(CONF_TARGET_TA, default=DEFAULT_TARGET_TA): NumberSelector(
-                NumberSelectorConfig(
-                    min=50,
-                    max=150,
-                    step=5,
-                    mode=NumberSelectorMode.BOX,
-                    unit_of_measurement="ppm",
-                )
-            ),
-            vol.Optional(CONF_TARGET_CH, default=DEFAULT_TARGET_CH): NumberSelector(
-                NumberSelectorConfig(
-                    min=150,
-                    max=500,
-                    step=10,
-                    mode=NumberSelectorMode.BOX,
-                    unit_of_measurement="ppm",
-                )
-            ),
-            vol.Optional(CONF_TARGET_CYA, default=DEFAULT_TARGET_CYA): NumberSelector(
-                NumberSelectorConfig(
-                    min=0,
-                    max=100,
-                    step=5,
-                    mode=NumberSelectorMode.BOX,
-                    unit_of_measurement="ppm",
-                )
-            ),
-        }
-
-        # Only show salt target for saltwater pools
-        if is_saltwater:
-            schema_dict[vol.Optional(CONF_TARGET_SALT, default=DEFAULT_TARGET_SALT)] = (
-                NumberSelector(
-                    NumberSelectorConfig(
-                        min=2500,
-                        max=4000,
-                        step=100,
-                        mode=NumberSelectorMode.BOX,
-                        unit_of_measurement="ppm",
-                    )
-                )
-            )
-
-        return self.async_show_form(
-            step_id="targets",
-            data_schema=vol.Schema(schema_dict),
         )
 
     async def async_step_chemicals(
@@ -506,97 +418,11 @@ class OptionsFlowHandler(OptionsFlow):
         self._data: dict[str, Any] = dict(config_entry.options)
 
     async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
+        self,
+        user_input: dict[str, Any] | None = None,  # noqa: ARG002
     ) -> ConfigFlowResult:
-        """Manage the main options."""
-        if user_input is not None:
-            self._data.update(user_input)
-            return await self.async_step_chemicals()
-
-        # Get current values or defaults
-        current = self.config_entry.options
-
-        return self.async_show_form(
-            step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_TARGET_PH,
-                        default=current.get(CONF_TARGET_PH, DEFAULT_TARGET_PH),
-                    ): NumberSelector(
-                        NumberSelectorConfig(
-                            min=6.8,
-                            max=8.0,
-                            step=0.1,
-                            mode=NumberSelectorMode.BOX,
-                        )
-                    ),
-                    vol.Optional(
-                        CONF_TARGET_FC,
-                        default=current.get(CONF_TARGET_FC, DEFAULT_TARGET_FC),
-                    ): NumberSelector(
-                        NumberSelectorConfig(
-                            min=1,
-                            max=20,
-                            step=0.5,
-                            mode=NumberSelectorMode.BOX,
-                            unit_of_measurement="ppm",
-                        )
-                    ),
-                    vol.Optional(
-                        CONF_TARGET_TA,
-                        default=current.get(CONF_TARGET_TA, DEFAULT_TARGET_TA),
-                    ): NumberSelector(
-                        NumberSelectorConfig(
-                            min=50,
-                            max=150,
-                            step=5,
-                            mode=NumberSelectorMode.BOX,
-                            unit_of_measurement="ppm",
-                        )
-                    ),
-                    vol.Optional(
-                        CONF_TARGET_CH,
-                        default=current.get(CONF_TARGET_CH, DEFAULT_TARGET_CH),
-                    ): NumberSelector(
-                        NumberSelectorConfig(
-                            min=150,
-                            max=500,
-                            step=10,
-                            mode=NumberSelectorMode.BOX,
-                            unit_of_measurement="ppm",
-                        )
-                    ),
-                    vol.Optional(
-                        CONF_TARGET_CYA,
-                        default=current.get(CONF_TARGET_CYA, DEFAULT_TARGET_CYA),
-                    ): NumberSelector(
-                        NumberSelectorConfig(
-                            min=0,
-                            max=100,
-                            step=5,
-                            mode=NumberSelectorMode.BOX,
-                            unit_of_measurement="ppm",
-                        )
-                    ),
-                    vol.Optional(
-                        CONF_TARGET_SALT,
-                        default=current.get(CONF_TARGET_SALT, DEFAULT_TARGET_SALT),
-                    ): NumberSelector(
-                        NumberSelectorConfig(
-                            min=2500,
-                            max=4000,
-                            step=100,
-                            mode=NumberSelectorMode.BOX,
-                            unit_of_measurement="ppm",
-                        )
-                    ),
-                }
-            ),
-            description_placeholders={
-                "name": self.config_entry.data.get(CONF_POOL_NAME, "Pool")
-            },
-        )
+        """Redirect to chemicals step (targets are now number entities)."""
+        return await self.async_step_chemicals()
 
     async def async_step_chemicals(
         self, user_input: dict[str, Any] | None = None
