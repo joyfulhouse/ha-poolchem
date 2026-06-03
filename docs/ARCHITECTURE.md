@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the architecture and design decisions of the Pool Chemistry integration.
+How Pool Chem is structured and why.
 
 ## Overview
 

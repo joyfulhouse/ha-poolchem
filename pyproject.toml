@@ -1,12 +1,12 @@
 [project]
-name = "homeassistant-poolchem"
+name = "ha-poolchem"
 version = "0.1.0"
 description = "Home Assistant custom integration for pool water chemistry analysis and dosing recommendations"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13"
 authors = [
-    { name = "joyfulhouse" }
+    { name = "JoyfulHouse Real Estate LLC" }
 ]
 keywords = ["home-assistant", "pool", "chemistry", "water-balance", "dosing"]
 classifiers = [
@@ -33,9 +33,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/joyfulhouse/homeassistant-poolchem"
-Repository = "https://github.com/joyfulhouse/homeassistant-poolchem"
-Issues = "https://github.com/joyfulhouse/homeassistant-poolchem/issues"
+Homepage = "https://github.com/joyfulhouse/ha-poolchem"
+Repository = "https://github.com/joyfulhouse/ha-poolchem"
+Issues = "https://github.com/joyfulhouse/ha-poolchem/issues"
 
 [build-system]
 requires = ["hatchling"]
