@@ -1,7 +1,7 @@
 {
   "domain": "poolchem",
   "name": "Pool Chemistry",
-  "codeowners": ["@joyfulhouse"],
+  "codeowners": ["@btli"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/joyfulhouse/ha-poolchem",
