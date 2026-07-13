@@ -151,6 +151,7 @@ environment.
 
 ## Support
 
+- Join the [JoyfulHouse Discord](https://discord.gg/gc4eTPwxjJ) for support and discussion across all JoyfulHouse Home Assistant integrations and libraries.
 - **Issues:** <https://github.com/joyfulhouse/ha-poolchem/issues>
 - **Discussions / questions:** open an issue with the `question` label.
 
