@@ -83,9 +83,11 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlowHandler:
+    def async_get_options_flow(
+        config_entry: ConfigEntry,  # noqa: ARG004
+    ) -> OptionsFlowHandler:
         """Get the options flow for this handler."""
-        return OptionsFlowHandler(config_entry)
+        return OptionsFlowHandler()
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -412,16 +414,17 @@ class PoolChemConfigFlow(HAConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(OptionsFlow):
     """Handle options flow for Pool Chemistry integration."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
+    def __init__(self) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
-        self._data: dict[str, Any] = dict(config_entry.options)
+        self._data: dict[str, Any] = {}
 
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,  # noqa: ARG002
     ) -> ConfigFlowResult:
         """Redirect to chemicals step (targets are now number entities)."""
+        # self.config_entry is provided by Home Assistant once the flow starts
+        self._data = dict(self.config_entry.options)
         return await self.async_step_chemicals()
 
     async def async_step_chemicals(

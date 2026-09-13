@@ -16,6 +16,21 @@ from custom_components.poolchem.const import (
 from custom_components.poolchem.coordinator import PoolChemCoordinator
 
 
+async def async_setup_coordinator(
+    hass: HomeAssistant, entry: MockConfigEntry
+) -> PoolChemCoordinator:
+    """Set up the config entry through Home Assistant and return its coordinator.
+
+    ``async_config_entry_first_refresh`` may only run while the entry is in
+    ``SETUP_IN_PROGRESS``, so the coordinator has to be created by the real
+    ``async_setup_entry`` path rather than instantiated directly.
+    """
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator: PoolChemCoordinator = entry.runtime_data
+    return coordinator
+
+
 async def test_coordinator_calculates_csi(
     hass: HomeAssistant,
     mock_source_entities: None,
@@ -29,8 +44,7 @@ async def test_coordinator_calculates_csi(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     assert coordinator.data is not None
     assert coordinator.data.csi is not None
@@ -56,8 +70,7 @@ async def test_coordinator_calculates_lsi(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     assert coordinator.data is not None
     assert coordinator.data.lsi is not None
@@ -78,8 +91,7 @@ async def test_coordinator_calculates_fc_cya_ratio(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     assert coordinator.data is not None
     # FC=5, CYA=40 -> ratio = 5/40 * 100 = 12.5%
@@ -100,8 +112,7 @@ async def test_coordinator_handles_celsius_temperature(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     assert coordinator.data is not None
     assert coordinator.data.water is not None
@@ -125,8 +136,7 @@ async def test_coordinator_handles_unavailable_sensor(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     # CSI/LSI should not be calculable without pH
     assert coordinator.data is not None
@@ -155,8 +165,7 @@ async def test_coordinator_calculates_doses(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     assert coordinator.data is not None
 
@@ -182,8 +191,7 @@ async def test_coordinator_updates_on_state_change(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     initial_csi = coordinator.data.csi
 
@@ -211,8 +219,7 @@ async def test_coordinator_minimal_config(
     )
     entry.add_to_hass(hass)
 
-    coordinator = PoolChemCoordinator(hass, entry)
-    await coordinator.async_setup()
+    coordinator = await async_setup_coordinator(hass, entry)
 
     assert coordinator.data is not None
     # CSI/LSI should still work with defaults for optional sensors

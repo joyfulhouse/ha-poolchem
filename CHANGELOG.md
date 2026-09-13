@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Actions CI: Ruff, mypy, pytest, HACS and hassfest validation on every push and pull request.
+
+### Fixed
+
+- Options flow no longer assigns `config_entry` in `__init__` (read-only in current Home Assistant).
+- Coordinator tests set the config entry up through Home Assistant instead of calling the
+  coordinator directly, matching the `async_config_entry_first_refresh` contract.
+
 ## [0.1.0-rc.3] - 2025-12-02
 
 ### Added
