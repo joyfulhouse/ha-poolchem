@@ -5,6 +5,7 @@ A Home Assistant custom integration that provides pool water chemistry analysis 
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE)
 [![HACS][hacs-shield]][hacs]
+[![CI][ci-shield]][ci]
 [![Project Maintenance][maintenance-shield]][maintenance]
 [![GitHub Sponsors][sponsors-shield]][sponsors]
 [![Ko-fi][kofi-shield]][kofi]
@@ -194,6 +195,8 @@ Built and maintained by [JoyfulHouse](https://github.com/joyfulhouse) with the
 [hacs]: https://github.com/hacs/integration
 [hacs-repo-shield]: https://my.home-assistant.io/badges/hacs_repository.svg
 [hacs-repo]: https://my.home-assistant.io/redirect/hacs_repository/?owner=joyfulhouse&repository=ha-poolchem&category=integration
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/joyfulhouse/ha-poolchem/validate.yml?style=for-the-badge&label=CI
+[ci]: https://github.com/joyfulhouse/ha-poolchem/actions
 [maintenance-shield]: https://img.shields.io/badge/maintainer-%40btli-blue.svg?style=for-the-badge
 [maintenance]: https://github.com/btli
 [sponsors-shield]: https://img.shields.io/badge/sponsor-GitHub-EA4AAA.svg?style=for-the-badge&logo=githubsponsors&logoColor=white
